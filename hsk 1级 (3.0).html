@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>xinwaychinese · HSK一级闪卡149</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #f1ebe5;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Times New Roman', Times, serif;
+            padding: 12px;
+        }
+        .card-frame {
+            width: 100%;
+            max-width: 700px;
+            background-color: #fdf8f2;
+            border-radius: 48px 48px 32px 32px;
+            box-shadow: 0 20px 30px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
+            padding: 24px 20px 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px solid #e6d5b8;
+        }
+        /* 可爱图标 + 词语练习 */
+        .header-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            width: 100%;
+        }
+        .icon-badge {
+            background: #ffb347;
+            border-radius: 60px;
+            padding: 8px 18px 8px 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 6px 0 #c15a1c;
+            border: 2px solid #a04500;
+        }
+        .icon-badge span {
+            font-size: 2.2rem;
+            line-height: 1;
+            filter: drop-shadow(2px 2px 0 #f28500);
+        }
+        .icon-badge h1 {
+            font-size: 1.9rem;
+            font-family: '楷体', 'KaiTi', '华文楷体', 'STKaiti', serif;
+            color: #2d1b0c;
+            letter-spacing: 3px;
+            font-weight: 600;
+            margin-right: 5px;
+            text-shadow: 1px 1px 0 #fce5b1;
+        }
+        /* 大黑板区域 — 占页面2/3左右 */
+        .blackboard-area {
+            width: 100%;
+            flex: 2 1 auto;
+            min-height: 380px;
+            max-height: 60vh;
+            aspect-ratio: 4 / 3;
+            margin: 10px 0 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* 黑板卡片容器 — 正确的3D翻转设置 */
+        .flip-container {
+            width: 100%;
+            height: 100%;
+            min-height: 300px;
+            background-color: transparent;
+            perspective: 2000px;
+            cursor: pointer;
+            border-radius: 30px;
+            box-shadow: 0 20px 0 #3a4a3f, 0 25px 30px -5px rgba(0,0,0,0.4);
+        }
+        .flip-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.5s;
+            transform-style: preserve-3d;
+            border-radius: 30px;
+        }
+        /* 翻转状态 — 绕Y轴转180度，让背面转到前面 */
+        .flip-inner.flipped {
+            transform: rotateY(180deg);
+        }
+        /* 正面 & 背面 共用黑板样式 — 绝对定位让两者重叠 */
+        .front, .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            background: #2b4b3a;
+            background-image: radial-gradient(circle at 10px 10px, #3f6b4f 2px, transparent 2px), 
+                              radial-gradient(circle at 30px 25px, #3f6b4f 2px, transparent 2px);
+            background-size: 60px 60px, 120px 120px;
+            border: 12px solid #6f4f2e;
+            border-radius: 40px;
+            box-shadow: inset 0 -5px 0 #3d5a3d, inset 0 5px 10px rgba(255,255,240,0.3), 0 10px 0 #4d3e2b;
+            padding: 25px 20px 20px;
+            display: flex;
+            flex-direction: column;
+            color: #f5f2da;
+            font-family: '楷体', 'KaiTi', 'STKaiti', serif;
+            overflow-y: auto;
+        }
+        /* 背面预先旋转180度，这样当父容器旋转180度时，背面就正对观众 */
+        .back {
+            transform: rotateY(180deg);
+        }
+        /* 固定左上角 xinwaychinese */
+        .xinway-tag {
+            position: absolute;
+            top: 12px;
+            left: 18px;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #f9e0a0;
+            text-shadow: 2px 2px 0 #3a5e3a;
+            letter-spacing: 1px;
+            z-index: 10;
+            background: rgba(0,0,0,0.2);
+            padding: 2px 8px 2px 6px;
+            border-radius: 40px;
+            backdrop-filter: blur(1px);
+            border: 1px dashed #e8c37b;
+            opacity: 0.95;
+            pointer-events: none;
+        }
+        /* 正面内容排版 */
+        .word-area {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-top: 25px;
+            font-family: '楷体', 'KaiTi', 'STKaiti', serif;
+            pointer-events: none;
+        }
+        .chinese-word {
+            font-size: 7vw;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 0.2rem;
+            text-shadow: 4px 4px 0 #1f3a27;
+            color: #fff9e0;
+            word-break: break-word;
+            max-width: 90%;
+        }
+        .example-sentence {
+            font-size: 3.8vw;
+            font-family: '楷体', 'KaiTi', 'STKaiti', serif;
+            background: rgba(255, 250, 210, 0.15);
+            padding: 10px 14px;
+            border-radius: 60px;
+            border-left: 5px solid #ffd966;
+            color: #fef9d7;
+            margin: 8px 0 5px;
+            max-width: 95%;
+            word-break: break-word;
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.5);
+            line-height: 1.4;
+        }
+        /* 背面内容排版 */
+        .back-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            width: 100%;
+            font-family: 'Times New Roman', Times, serif;
+            margin-top: 25px;
+            gap: 0.6rem;
+            color: #f5f0cf;
+            pointer-events: none;
+        }
+        .pinyin {
+            font-size: 5vw;
+            font-weight: 600;
+            font-family: 'Times New Roman', Times, serif;
+            background: #3b5e4b;
+            padding: 5px 20px;
+            border-radius: 50px;
+            border: 2px solid #c9ae74;
+            width: fit-content;
+        }
+        .pos {
+            font-size: 4.2vw;
+            font-family: 'Times New Roman', Times, serif;
+            background: #637a54;
+            padding: 6px 22px;
+            border-radius: 40px;
+            color: #fef7cd;
+            font-weight: 500;
+        }
+        .russian {
+            font-size: 4vw;
+            font-family: 'Times New Roman', Times, serif;
+            background: #2a4230;
+            padding: 10px 20px;
+            border-radius: 50px;
+            border: 2px dashed #f1cf8a;
+            max-width: 95%;
+            word-break: break-word;
+        }
+        /* 按钮栏 */
+        .button-bar {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .action-btn {
+            background: #f3d9a4;
+            border: 4px solid #ba8b4a;
+            color: #3d2b13;
+            font-size: 1.7rem;
+            font-weight: bold;
+            padding: 12px 35px;
+            border-radius: 60px;
+            box-shadow: 0 7px 0 #7b5a38;
+            cursor: pointer;
+            transition: all 0.06s linear;
+            font-family: 'Times New Roman', Times, serif;
+            letter-spacing: 2px;
+            min-width: 140px;
+            text-align: center;
+        }
+        .action-btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 2px 0 #7b5a38;
+        }
+        .action-btn:disabled {
+            opacity: 0.4;
+            transform: translateY(3px);
+            box-shadow: 0 4px 0 #7b5a38;
+            pointer-events: none;
+        }
+        .small-btn {
+            font-size: 1.5rem;
+            padding: 8px 20px;
+            min-width: 110px;
+        }
+        .nav-btn {
+            background: #b6d7a8;
+            border-color: #3f7842;
+            box-shadow: 0 6px 0 #2a5e2a;
+            color: #1f3f1f;
+        }
+        .hidden {
+            display: none !important;
+        }
+        /* 挑战成功界面 */
+        .success-message {
+            width: 100%;
+            height: 100%;
+            background: #2b4b3a;
+            border-radius: 40px;
+            border: 12px solid #6f4f2e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            color: #ffd966;
+            font-family: '楷体', 'KaiTi', serif;
+            box-shadow: inset 0 0 30px #c9ae74, 0 15px 0 #4d3e2b;
+        }
+        .success-message span {
+            font-size: 5vw;
+            font-weight: bold;
+            background: #5f4230;
+            padding: 10px 35px;
+            border-radius: 60px;
+            border: 4px solid #f9cb7b;
+        }
+        /* 手机微调 */
+        @media (max-width: 500px) {
+            .chinese-word { font-size: 14vw; }
+            .example-sentence { font-size: 5vw; }
+            .pinyin { font-size: 6vw; }
+            .pos { font-size: 5.5vw; }
+            .russian { font-size: 5vw; }
+            .action-btn { font-size: 1.4rem; padding: 10px 15px; min-width: 110px; }
+            .xinway-tag { font-size: 1.1rem; top: 6px; left: 10px; }
+            .blackboard-area { min-height: 320px; }
+        }
+        /* 汉字保持楷体 */
+        .chinese-word, .example-sentence {
+            font-family: '楷体', 'KaiTi', '华文楷体', 'STKaiti', serif;
+        }
+        /* 字母新罗马 */
+        .pinyin, .pos, .russian, .action-btn, .xinway-tag {
+            font-family: 'Times New Roman', Times, serif;
+        }
+    </style>
+</head>
+<body>
+<div class="card-frame">
+    <!-- 可爱图标 + 词语练习 -->
+    <div class="header-icon">
+        <div class="icon-badge">
+            <span>🇨🇳📚</span>
+            <h1>词语练习 (HSK一级)</h1>
+        </div>
+    </div>
+
+    <!-- 大黑板区域 -->
+    <div class="blackboard-area" id="blackboardArea">
+        <!-- 动态内容：要么显示闪卡，要么显示挑战成功 -->
+        <div id="flashcardContainer" style="width: 100%; height: 100%;">
+            <!-- 闪卡翻转结构 — 正面背面完全重叠 -->
+            <div class="flip-container" id="flipContainer">
+                <div class="flip-inner" id="flipInner">
+                    <!-- 正面 front -->
+                    <div class="front" id="cardFront">
+                        <span class="xinway-tag">xinwaychinese</span>
+                        <div class="word-area" id="frontContent">
+                            <div class="chinese-word" id="wordDisplay"></div>
+                            <div class="example-sentence" id="sentenceDisplay"></div>
+                        </div>
+                    </div>
+                    <!-- 背面 back (已经旋转180度，初始不可见) -->
+                    <div class="back" id="cardBack">
+                        <span class="xinway-tag">xinwaychinese</span>
+                        <div class="back-content" id="backContent">
+                            <div class="pinyin" id="pinyinDisplay"></div>
+                            <div class="pos" id="posDisplay"></div>
+                            <div class="russian" id="ruDisplay"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- 挑战成功独立显示 (默认隐藏) -->
+        <div id="successScreen" class="success-message hidden">
+            <span>🎉 挑战成功 🎉</span>
+            <button class="action-btn small-btn" id="restartFromSuccess">重新开始</button>
+        </div>
+    </div>
+
+    <!-- 按钮区域 -->
+    <div class="button-bar" id="buttonBar">
+        <button class="action-btn" id="startBtn">开始</button>
+        <button class="action-btn nav-btn hidden" id="prevBtn">◀ 上一个</button>
+        <button class="action-btn nav-btn hidden" id="nextBtn">下一个 ▶</button>
+        <button class="action-btn small-btn hidden" id="restartBtn">重新开始</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- HSK一级词汇 (149词) 每个词语配有简单例句 ----------
+        const cards = [
+            { word: "爱", pinyin: "ài", pos: "", ru: "любить", ex: "我爱妈妈。" },
+            { word: "吧", pinyin: "ba", pos: "", ru: "частица предложения", ex: "我们走吧。" },
+            { word: "八", pinyin: "bā", pos: "", ru: "восемь", ex: "我有八个苹果。" },
+            { word: "爸爸", pinyin: "bàba", pos: "", ru: "папа", ex: "我爸爸是老师。" },
+            { word: "百", pinyin: "bǎi", pos: "", ru: "сто", ex: "一百元钱。" },
+            { word: "白天", pinyin: "báitiān", pos: "", ru: "день", ex: "白天工作。" },
+            { word: "半", pinyin: "bàn", pos: "", ru: "половина", ex: "半小时。" },
+            { word: "包子", pinyin: "bāozi", pos: "", ru: "баоцзы", ex: "我爱吃包子。" },
+            { word: "杯子", pinyin: "bēizi", pos: "", ru: "чашка", ex: "一个杯子。" },
+            { word: "本", pinyin: "běn", pos: "", ru: "сч. слово для книг", ex: "一本书。" },
+            { word: "边", pinyin: "biān", pos: "", ru: "сторона", ex: "这边坐。" },
+            { word: "病", pinyin: "bìng", pos: "", ru: "болезнь", ex: "他病了。" },
+            { word: "不", pinyin: "bù", pos: "", ru: "не", ex: "我不去。" },
+            { word: "不客气", pinyin: "bú kèqi", pos: "", ru: "не за что", ex: "谢谢——不客气。" },
+            { word: "不要", pinyin: "búyào", pos: "", ru: "не нужно", ex: "不要咖啡。" },
+            { word: "菜", pinyin: "cài", pos: "", ru: "овощи", ex: "吃菜。" },
+            { word: "茶", pinyin: "chá", pos: "", ru: "чай", ex: "我喜欢喝茶。" },
+            { word: "常", pinyin: "cháng", pos: "", ru: "часто", ex: "我常去商店。" },
+            { word: "超市", pinyin: "chāoshì", pos: "", ru: "супермаркет", ex: "去超市。" },
+            { word: "车", pinyin: "chē", pos: "", ru: "машина", ex: "一辆车。" },
+            { word: "吃", pinyin: "chī", pos: "", ru: "есть", ex: "吃饭。" },
+            { word: "穿", pinyin: "chuān", pos: "", ru: "носить", ex: "穿衣服。" },
+            { word: "出租车", pinyin: "chūzūchē", pos: "", ru: "такси", ex: "坐出租车。" },
+            { word: "大", pinyin: "dà", pos: "", ru: "большой", ex: "大城市。" },
+            { word: "打电话", pinyin: "dǎ diànhuà", pos: "", ru: "звонить", ex: "打电话给妈妈。" },
+            { word: "大家", pinyin: "dàjiā", pos: "", ru: "все", ex: "大家好。" },
+            { word: "到", pinyin: "dào", pos: "", ru: "прибывать", ex: "到学校了。" },
+            { word: "大学", pinyin: "dàxué", pos: "", ru: "университет", ex: "上大学。" },
+            { word: "大学生", pinyin: "dàxuéshēng", pos: "", ru: "студент", ex: "我是大学生。" },
+            { word: "的", pinyin: "de", pos: "", ru: "притяж. частица", ex: "我的书。" },
+            { word: "第", pinyin: "dì", pos: "", ru: "префикс числит.", ex: "第一课。" },
+            { word: "点", pinyin: "diǎn", pos: "", ru: "час", ex: "现在三点。" },
+            { word: "电话", pinyin: "diànhuà", pos: "", ru: "телефон", ex: "电话响了。" },
+            { word: "电脑", pinyin: "diànnǎo", pos: "", ru: "компьютер", ex: "用电脑。" },
+            { word: "电视", pinyin: "diànshì", pos: "", ru: "телевизор", ex: "看电视。" },
+            { word: "电影", pinyin: "diànyǐng", pos: "", ru: "фильм", ex: "看电影。" },
+            { word: "电影院", pinyin: "diànyǐngyuàn", pos: "", ru: "кинотеатр", ex: "去电影院。" },
+            { word: "弟弟", pinyin: "dìdi", pos: "", ru: "мл. брат", ex: "我弟弟五岁。" },
+            { word: "东西", pinyin: "dōngxi", pos: "", ru: "вещь", ex: "买东西。" },
+            { word: "都", pinyin: "dōu", pos: "", ru: "все", ex: "我们都去。" },
+            { word: "读", pinyin: "dú", pos: "", ru: "читать", ex: "读书。" },
+            { word: "对", pinyin: "duì", pos: "", ru: "правильно", ex: "对不对？" },
+            { word: "对不起", pinyin: "duìbuqǐ", pos: "", ru: "извините", ex: "对不起！" },
+            { word: "多", pinyin: "duō", pos: "", ru: "много", ex: "多少钱？" },
+            { word: "多少", pinyin: "duōshao", pos: "", ru: "сколько", ex: "多少人？" },
+            { word: "读书", pinyin: "dúshū", pos: "", ru: "читать книгу", ex: "他在读书。" },
+            { word: "二", pinyin: "èr", pos: "", ru: "два", ex: "二个苹果。" },
+            { word: "儿子", pinyin: "érzi", pos: "", ru: "сын", ex: "我儿子。" },
+            { word: "饭", pinyin: "fàn", pos: "", ru: "еда", ex: "吃饭。" },
+            { word: "饭店", pinyin: "fàndiàn", pos: "", ru: "ресторан", ex: "去饭店吃饭。" },
+            { word: "房间", pinyin: "fángjiān", pos: "", ru: "комната", ex: "一个房间。" },
+            { word: "非常", pinyin: "fēicháng", pos: "", ru: "очень", ex: "非常好。" },
+            { word: "飞机", pinyin: "fēijī", pos: "", ru: "самолёт", ex: "坐飞机。" },
+            { word: "分", pinyin: "fēn", pos: "", ru: "минута", ex: "五分钟。" },
+            { word: "分钟", pinyin: "fēnzhōng", pos: "", ru: "минута", ex: "等十分钟。" },
+            { word: "高兴", pinyin: "gāoxìng", pos: "", ru: "радостный", ex: "我很高兴。" },
+            { word: "个", pinyin: "gè", pos: "", ru: "сч. слово", ex: "一个人。" },
+            { word: "歌", pinyin: "gē", pos: "", ru: "песня", ex: "听歌。" },
+            { word: "哥哥", pinyin: "gēge", pos: "", ru: "ст. брат", ex: "我哥哥工作。" },
+            { word: "给", pinyin: "gěi", pos: "", ru: "давать", ex: "给我书。" },
+            { word: "公司", pinyin: "gōngsī", pos: "", ru: "компания", ex: "在公司工作。" },
+            { word: "工作", pinyin: "gōngzuò", pos: "", ru: "работа", ex: "我工作。" },
+            { word: "狗", pinyin: "gǒu", pos: "", ru: "собака", ex: "一只狗。" },
+            { word: "贵", pinyin: "guì", pos: "", ru: "дорогой", ex: "太贵了。" },
+            { word: "国", pinyin: "guó", pos: "", ru: "страна", ex: "中国。" },
+            { word: "还", pinyin: "hái", pos: "", ru: "ещё", ex: "还要吗？" },
+            { word: "孩子", pinyin: "háizi", pos: "", ru: "ребёнок", ex: "两个孩子。" },
+            { word: "汉语", pinyin: "hànyǔ", pos: "", ru: "китайский", ex: "学汉语。" },
+            { word: "汉字", pinyin: "hànzì", pos: "", ru: "иероглифы", ex: "写汉字。" },
+            { word: "号", pinyin: "hào", pos: "", ru: "номер", ex: "几号？" },
+            { word: "好", pinyin: "hǎo", pos: "", ru: "хороший", ex: "很好。" },
+            { word: "好吃", pinyin: "hǎochī", pos: "", ru: "вкусный", ex: "好吃！" },
+            { word: "好看", pinyin: "hǎokàn", pos: "", ru: "красивый", ex: "好看的衣服。" },
+            { word: "好听", pinyin: "hǎotīng", pos: "", ru: "приятный слуху", ex: "音乐很好听。" },
+            { word: "好玩儿", pinyin: "hǎowánr", pos: "", ru: "интересный", ex: "北京好玩儿。" },
+            { word: "和", pinyin: "hé", pos: "", ru: "и", ex: "我和你。" },
+            { word: "喝", pinyin: "hē", pos: "", ru: "пить", ex: "喝水。" },
+            { word: "很", pinyin: "hěn", pos: "", ru: "очень", ex: "很好。" },
+            { word: "后", pinyin: "hòu", pos: "", ru: "после", ex: "后来。" },
+            { word: "回", pinyin: "huí", pos: "", ru: "возвращаться", ex: "回家。" },
+            { word: "会", pinyin: "huì", pos: "", ru: "уметь", ex: "我会说汉语。" },
+            { word: "火车", pinyin: "huǒchē", pos: "", ru: "поезд", ex: "坐火车。" },
+            { word: "几", pinyin: "jǐ", pos: "", ru: "сколько", ex: "几点了？" },
+            { word: "家", pinyin: "jiā", pos: "", ru: "семья", ex: "我家有三口人。" },
+            { word: "见", pinyin: "jiàn", pos: "", ru: "видеть", ex: "明天见。" },
+            { word: "件", pinyin: "jiàn", pos: "", ru: "сч. слово", ex: "一件衣服。" },
+            { word: "叫", pinyin: "jiào", pos: "", ru: "звать", ex: "你叫什么？" },
+            { word: "饺子", pinyin: "jiǎozi", pos: "", ru: "пельмени", ex: "我爱吃饺子。" },
+            { word: "家人", pinyin: "jiārén", pos: "", ru: "семья", ex: "我的家人。" },
+            { word: "鸡蛋", pinyin: "jīdàn", pos: "", ru: "яйцо", ex: "吃鸡蛋。" },
+            { word: "姐姐", pinyin: "jiějie", pos: "", ru: "ст. сестра", ex: "我姐姐是学生。" },
+            { word: "今年", pinyin: "jīnnián", pos: "", ru: "этот год", ex: "今年我十岁。" },
+            { word: "今天", pinyin: "jīntiān", pos: "", ru: "сегодня", ex: "今天星期一。" },
+            { word: "九", pinyin: "jiǔ", pos: "", ru: "девять", ex: "九个。" },
+            { word: "觉得", pinyin: "juéde", pos: "", ru: "чувствовать", ex: "我觉得很好。" },
+            { word: "开", pinyin: "kāi", pos: "", ru: "открывать", ex: "开门。" },
+            { word: "开车", pinyin: "kāichē", pos: "", ru: "водить", ex: "爸爸开车。" },
+            { word: "看", pinyin: "kàn", pos: "", ru: "смотреть", ex: "看书。" },
+            { word: "看病", pinyin: "kànbìng", pos: "", ru: "к врачу", ex: "我去看病。" },
+            { word: "看见", pinyin: "kànjiàn", pos: "", ru: "увидеть", ex: "看见你了。" },
+            { word: "课", pinyin: "kè", pos: "", ru: "урок", ex: "上课。" },
+            { word: "可以", pinyin: "kěyǐ", pos: "", ru: "можно", ex: "可以进来吗？" },
+            { word: "口", pinyin: "kǒu", pos: "", ru: "рот", ex: "一口饭。" },
+            { word: "块", pinyin: "kuài", pos: "", ru: "юань", ex: "一块钱。" },
+            { word: "来", pinyin: "lái", pos: "", ru: "приходить", ex: "来我家。" },
+            { word: "老师", pinyin: "lǎoshī", pos: "", ru: "учитель", ex: "张老师好。" },
+            { word: "了", pinyin: "le", pos: "", ru: "частица", ex: "我吃了。" },
+            { word: "冷", pinyin: "lěng", pos: "", ru: "холодный", ex: "今天很冷。" },
+            { word: "里", pinyin: "lǐ", pos: "", ru: "внутри", ex: "在学校里。" },
+            { word: "两", pinyin: "liǎng", pos: "", ru: "два", ex: "两个人。" },
+            { word: "零", pinyin: "líng", pos: "", ru: "ноль", ex: "零度。" },
+            { word: "六", pinyin: "liù", pos: "", ru: "шесть", ex: "六点。" },
+            { word: "吗", pinyin: "ma", pos: "", ru: "вопр. частица", ex: "你好吗？" },
+            { word: "卖", pinyin: "mài", pos: "", ru: "продавать", ex: "卖苹果。" },
+            { word: "买", pinyin: "mǎi", pos: "", ru: "покупать", ex: "买书。" },
+            { word: "妈妈", pinyin: "māma", pos: "", ru: "мама", ex: "我爱妈妈。" },
+            { word: "忙", pinyin: "máng", pos: "", ru: "занятый", ex: "我很忙。" },
+            { word: "猫", pinyin: "māo", pos: "", ru: "кошка", ex: "一只猫。" },
+            { word: "没关系", pinyin: "méi guānxi", pos: "", ru: "ничего", ex: "A: 对不起 B: 没关系" },
+            { word: "妹妹", pinyin: "mèimei", pos: "", ru: "мл. сестра", ex: "我妹妹小。" },
+            { word: "没事", pinyin: "méishì", pos: "", ru: "ничего", ex: "没事。" },
+            { word: "没有", pinyin: "méiyǒu", pos: "", ru: "нет", ex: "没有水。" },
+            { word: "们", pinyin: "men", pos: "", ru: "мн. число", ex: "我们。" },
+            { word: "面包", pinyin: "miànbāo", pos: "", ru: "хлеб", ex: "吃面包。" },
+            { word: "面条儿", pinyin: "miàntiáor", pos: "", ru: "лапша", ex: "吃面条儿。" },
+            { word: "米饭", pinyin: "mǐfàn", pos: "", ru: "рис", ex: "吃米饭。" },
+            { word: "明年", pinyin: "míngnián", pos: "", ru: "след. год", ex: "明年我十岁。" },
+            { word: "明天", pinyin: "míngtiān", pos: "", ru: "завтра", ex: "明天见。" },
+            { word: "名字", pinyin: "míngzi", pos: "", ru: "имя", ex: "你叫什么名字？" },
+            { word: "那", pinyin: "nà", pos: "", ru: "тот", ex: "那个人。" },
+            { word: "哪", pinyin: "nǎ", pos: "", ru: "какой", ex: "哪个？" },
+            { word: "那边", pinyin: "nàbiān", pos: "", ru: "там", ex: "在那边。" },
+            { word: "哪儿", pinyin: "nǎr", pos: "", ru: "где", ex: "你去哪儿？" },
+            { word: "那个", pinyin: "nàge", pos: "", ru: "тот", ex: "那个杯子。" },
+            { word: "哪里", pinyin: "nǎlǐ", pos: "", ru: "где", ex: "你住在哪里？" },
+            { word: "男", pinyin: "nán", pos: "", ru: "мужчина", ex: "男的。" },
+            { word: "男朋友", pinyin: "nánpéngyou", pos: "", ru: "парень", ex: "我男朋友。" },
+            { word: "哪些", pinyin: "nǎxiē", pos: "", ru: "какие", ex: "哪些人？" },
+            { word: "呢", pinyin: "ne", pos: "", ru: "частица", ex: "你呢？" },
+            { word: "能", pinyin: "néng", pos: "", ru: "мочь", ex: "能来吗？" },
+            { word: "你", pinyin: "nǐ", pos: "", ru: "ты", ex: "你好。" },
+            { word: "年", pinyin: "nián", pos: "", ru: "год", ex: "今年。" },
+            { word: "你好", pinyin: "nǐhǎo", pos: "", ru: "здравствуйте", ex: "你好！" },
+            { word: "你们", pinyin: "nǐmen", pos: "", ru: "вы", ex: "你们好。" },
+            { word: "您", pinyin: "nín", pos: "", ru: "Вы", ex: "您好。" },
+            { word: "牛奶", pinyin: "niúnǎi", pos: "", ru: "молоко", ex: "喝牛奶。" },
+            { word: "女", pinyin: "nǚ", pos: "", ru: "женщина", ex: "女的。" },
+            { word: "女儿", pinyin: "nǚ'ér", pos: "", ru: "дочь", ex: "我女儿。" },
+            { word: "女朋友", pinyin: "nǚpéngyou", pos: "", ru: "девушка", ex: "我女朋友。" },
+            { word: "女士", pinyin: "nǚshì", pos: "", ru: "госпожа", ex: "女士们。" },
+            { word: "朋友", pinyin: "péngyou", pos: "", ru: "друг", ex: "好朋友。" },
+            { word: "便宜", pinyin: "piányi", pos: "", ru: "дешёвый", ex: "很便宜。" },
+            { word: "漂亮", pinyin: "piàoliang", pos: "", ru: "красивый", ex: "漂亮女孩。" },
+            { word: "苹果", pinyin: "píngguǒ", pos: "", ru: "яблоко", ex: "吃苹果。" },
+            { word: "七", pinyin: "qī", pos: "", ru: "семь", ex: "七点。" },
+            { word: "前", pinyin: "qián", pos: "", ru: "перед", ex: "前面。" },
+            { word: "钱", pinyin: "qián", pos: "", ru: "деньги", ex: "没有钱。" },
+            { word: "千", pinyin: "qiān", pos: "", ru: "тысяча", ex: "一千。" },
+            { word: "起床", pinyin: "qǐchuáng", pos: "", ru: "вставать", ex: "七点起床。" },
+            { word: "请", pinyin: "qǐng", pos: "", ru: "пожалуйста", ex: "请进。" },
+            { word: "请问", pinyin: "qǐngwèn", pos: "", ru: "можно спросить", ex: "请问，你叫什么？" },
+            { word: "去", pinyin: "qù", pos: "", ru: "идти", ex: "去学校。" },
+            { word: "去年", pinyin: "qùnián", pos: "", ru: "прош. год", ex: "去年我学习汉语。" },
+            { word: "热", pinyin: "rè", pos: "", ru: "жаркий", ex: "今天很热。" },
+            { word: "人", pinyin: "rén", pos: "", ru: "человек", ex: "一个人。" },
+            { word: "认识", pinyin: "rènshi", pos: "", ru: "знать", ex: "我认识你。" },
+            { word: "日", pinyin: "rì", pos: "", ru: "день", ex: "一日。" },
+            { word: "三", pinyin: "sān", pos: "", ru: "три", ex: "三个。" },
+            { word: "上", pinyin: "shàng", pos: "", ru: "на", ex: "上面。" },
+            { word: "上班", pinyin: "shàngbān", pos: "", ru: "на работу", ex: "八点上班。" },
+            { word: "商店", pinyin: "shāngdiàn", pos: "", ru: "магазин", ex: "去商店。" },
+            { word: "上课", pinyin: "shàngkè", pos: "", ru: "на урок", ex: "我们上课。" },
+            { word: "上午", pinyin: "shàngwǔ", pos: "", ru: "утро", ex: "上午九点。" },
+            { word: "上学", pinyin: "shàngxué", pos: "", ru: "в школу", ex: "孩子上学。" },
+            { word: "少", pinyin: "shǎo", pos: "", ru: "мало", ex: "很少。" },
+            { word: "谁", pinyin: "shéi", pos: "", ru: "кто", ex: "他是谁？" },
+            { word: "生病", pinyin: "shēngbìng", pos: "", ru: "заболеть", ex: "我生病了。" },
+            { word: "什么", pinyin: "shénme", pos: "", ru: "что", ex: "这是什么？" },
+            { word: "十", pinyin: "shí", pos: "", ru: "десять", ex: "十个。" },
+            { word: "是", pinyin: "shì", pos: "", ru: "быть", ex: "我是学生。" },
+            { word: "事", pinyin: "shì", pos: "", ru: "дело", ex: "有事吗？" },
+            { word: "时候", pinyin: "shíhou", pos: "", ru: "время", ex: "什么时候？" },
+            { word: "时间", pinyin: "shíjiān", pos: "", ru: "время", ex: "没有时间。" },
+            { word: "手机", pinyin: "shǒujī", pos: "", ru: "телефон", ex: "用手机。" },
+            { word: "书", pinyin: "shū", pos: "", ru: "книга", ex: "一本书。" },
+            { word: "书店", pinyin: "shūdiàn", pos: "", ru: "книжный", ex: "去书店。" },
+            { word: "睡", pinyin: "shuì", pos: "", ru: "спать", ex: "睡觉。" },
+            { word: "水", pinyin: "shuǐ", pos: "", ru: "вода", ex: "喝水。" },
+            { word: "水果", pinyin: "shuǐguǒ", pos: "", ru: "фрукты", ex: "吃水果。" },
+            { word: "睡觉", pinyin: "shuìjiào", pos: "", ru: "спать", ex: "睡觉了。" },
+            { word: "说", pinyin: "shuō", pos: "", ru: "говорить", ex: "说汉语。" },
+            { word: "说话", pinyin: "shuōhuà", pos: "", ru: "разговаривать", ex: "别说话。" },
+            { word: "四", pinyin: "sì", pos: "", ru: "четыре", ex: "四个。" },
+            { word: "岁", pinyin: "suì", pos: "", ru: "лет", ex: "你几岁？" },
+            { word: "他", pinyin: "tā", pos: "", ru: "он", ex: "他是老师。" },
+            { word: "她", pinyin: "tā", pos: "", ru: "она", ex: "她是医生。" },
+            { word: "它", pinyin: "tā", pos: "", ru: "оно", ex: "它是狗。" },
+            { word: "太", pinyin: "tài", pos: "", ru: "слишком", ex: "太大。" },
+            { word: "他们", pinyin: "tāmen", pos: "", ru: "они (м.)", ex: "他们好。" },
+            { word: "它们", pinyin: "tāmen", pos: "", ru: "они (неод.)", ex: "它们很可爱。" },
+            { word: "她们", pinyin: "tāmen", pos: "", ru: "они (ж.)", ex: "她们是学生。" },
+            { word: "天", pinyin: "tiān", pos: "", ru: "день", ex: "今天。" },
+            { word: "天气", pinyin: "tiānqì", pos: "", ru: "погода", ex: "天气好。" },
+            { word: "听", pinyin: "tīng", pos: "", ru: "слушать", ex: "听音乐。" },
+            { word: "听见", pinyin: "tīngjiàn", pos: "", ru: "услышать", ex: "听不见。" },
+            { word: "同学", pinyin: "tóngxué", pos: "", ru: "одноклассник", ex: "我同学。" },
+            { word: "外", pinyin: "wài", pos: "", ru: "вне", ex: "外面。" },
+            { word: "外边", pinyin: "wàibian", pos: "", ru: "снаружи", ex: "去外边。" },
+            { word: "玩", pinyin: "wán", pos: "", ru: "играть", ex: "玩手机。" },
+            { word: "晚", pinyin: "wǎn", pos: "", ru: "вечер", ex: "晚上。" },
+            { word: "晚饭", pinyin: "wǎnfàn", pos: "", ru: "ужин", ex: "吃晚饭。" },
+            { word: "晚上", pinyin: "wǎnshang", pos: "", ru: "вечером", ex: "晚上好。" },
+            { word: "喂", pinyin: "wèi", pos: "", ru: "алло", ex: "喂，你好。" },
+            { word: "问", pinyin: "wèn", pos: "", ru: "спрашивать", ex: "问问题。" },
+            { word: "问题", pinyin: "wèntí", pos: "", ru: "вопрос", ex: "没问题。" },
+            { word: "我", pinyin: "wǒ", pos: "", ru: "я", ex: "我是学生。" },
+            { word: "我们", pinyin: "wǒmen", pos: "", ru: "мы", ex: "我们走。" },
+            { word: "五", pinyin: "wǔ", pos: "", ru: "пять", ex: "五个。" },
+            { word: "午饭", pinyin: "wǔfàn", pos: "", ru: "обед", ex: "吃午饭。" },
+            { word: "下", pinyin: "xià", pos: "", ru: "вниз", ex: "下午。" },
+            { word: "下班", pinyin: "xiàbān", pos: "", ru: "с работы", ex: "五点下班。" },
+            { word: "下课", pinyin: "xiàkè", pos: "", ru: "с урока", ex: "下课了。" },
+            { word: "想", pinyin: "xiǎng", pos: "", ru: "хотеть", ex: "我想去。" },
+            { word: "先生", pinyin: "xiānsheng", pos: "", ru: "господин", ex: "李先生。" },
+            { word: "现在", pinyin: "xiànzài", pos: "", ru: "сейчас", ex: "现在几点？" },
+            { word: "小", pinyin: "xiǎo", pos: "", ru: "маленький", ex: "小朋友。" },
+            { word: "小朋友", pinyin: "xiǎopéngyou", pos: "", ru: "ребёнок", ex: "可爱的小朋友。" },
+            { word: "小时", pinyin: "xiǎoshí", pos: "", ru: "час", ex: "一小时。" },
+            { word: "小学", pinyin: "xiǎoxué", pos: "", ru: "нач. школа", ex: "上小学。" },
+            { word: "小学生", pinyin: "xiǎoxuéshēng", pos: "", ru: "ученик", ex: "他是小学生。" },
+            { word: "下午", pinyin: "xiàwǔ", pos: "", ru: "после обеда", ex: "下午两点。" },
+            { word: "下雨", pinyin: "xiàyǔ", pos: "", ru: "дождь", ex: "下雨了。" },
+            { word: "写", pinyin: "xiě", pos: "", ru: "писать", ex: "写字。" },
+            { word: "些", pinyin: "xiē", pos: "", ru: "несколько", ex: "这些。" },
+            { word: "谢谢", pinyin: "xièxie", pos: "", ru: "спасибо", ex: "谢谢你。" },
+            { word: "喜欢", pinyin: "xǐhuan", pos: "", ru: "нравиться", ex: "我喜欢你。" },
+            { word: "新", pinyin: "xīn", pos: "", ru: "новый", ex: "新书。" },
+            { word: "星期", pinyin: "xīngqī", pos: "", ru: "неделя", ex: "一个星期。" },
+            { word: "星期日", pinyin: "xīngqīrì", pos: "", ru: "воскресенье", ex: "星期日休息。" },
+            { word: "星期天", pinyin: "xīngqītiān", pos: "", ru: "воскресенье", ex: "星期天去玩。" },
+            { word: "休息", pinyin: "xiūxi", pos: "", ru: "отдыхать", ex: "休息一下。" },
+            { word: "学", pinyin: "xué", pos: "", ru: "учиться", ex: "学汉语。" },
+            { word: "学生", pinyin: "xuésheng", pos: "", ru: "ученик", ex: "我是学生。" },
+            { word: "学习", pinyin: "xuéxí", pos: "", ru: "учиться", ex: "学习汉语。" },
+            { word: "学校", pinyin: "xuéxiào", pos: "", ru: "школа", ex: "在学校。" },
+            { word: "要", pinyin: "yào", pos: "", ru: "хотеть", ex: "我要咖啡。" },
+            { word: "也", pinyin: "yě", pos: "", ru: "тоже", ex: "我也去。" },
+            { word: "一", pinyin: "yī", pos: "", ru: "один", ex: "一个。" },
+            { word: "一半", pinyin: "yībàn", pos: "", ru: "половина", ex: "一半的人。" },
+            { word: "一点儿", pinyin: "yìdiǎnr", pos: "", ru: "немного", ex: "一点儿水。" },
+            { word: "衣服", pinyin: "yīfu", pos: "", ru: "одежда", ex: "穿衣服。" },
+            { word: "医生", pinyin: "yīshēng", pos: "", ru: "врач", ex: "看医生。" },
+            { word: "一下", pinyin: "yíxià", pos: "", ru: "немного", ex: "看一下。" },
+            { word: "一些", pinyin: "yìxiē", pos: "", ru: "несколько", ex: "一些书。" },
+            { word: "医院", pinyin: "yīyuàn", pos: "", ru: "больница", ex: "去医院。" },
+            { word: "椅子", pinyin: "yǐzi", pos: "", ru: "стул", ex: "一把椅子。" },
+            { word: "有", pinyin: "yǒu", pos: "", ru: "иметь", ex: "我有书。" },
+            { word: "有的", pinyin: "yǒude", pos: "", ru: "некоторые", ex: "有的人。" },
+            { word: "有点儿", pinyin: "yǒudiǎnr", pos: "", ru: "немного", ex: "有点儿冷。" },
+            { word: "有些", pinyin: "yǒuxiē", pos: "", ru: "некоторые", ex: "有些事。" },
+            { word: "雨", pinyin: "yǔ", pos: "", ru: "дождь", ex: "下雨。" },
+            { word: "元", pinyin: "yuán", pos: "", ru: "юань", ex: "十元。" },
+            { word: "月", pinyin: "yuè", pos: "", ru: "месяц", ex: "一月。" },
+            { word: "在", pinyin: "zài", pos: "", ru: "в", ex: "在家。" },
+            { word: "再", pinyin: "zài", pos: "", ru: "снова", ex: "再见。" },
+            { word: "再见", pinyin: "zàijiàn", pos: "", ru: "до свидания", ex: "再见！" },
+            { word: "早", pinyin: "zǎo", pos: "", ru: "рано", ex: "早上好。" },
+            { word: "早饭", pinyin: "zǎofàn", pos: "", ru: "завтрак", ex: "吃早饭。" },
+            { word: "早上", pinyin: "zǎoshang", pos: "", ru: "утром", ex: "早上六点。" },
+            { word: "怎么", pinyin: "zěnme", pos: "", ru: "как", ex: "怎么去？" },
+            { word: "怎么样", pinyin: "zěnmeyàng", pos: "", ru: "как дела", ex: "你怎么样？" },
+            { word: "找", pinyin: "zhǎo", pos: "", ru: "искать", ex: "找人。" },
+            { word: "这", pinyin: "zhè", pos: "", ru: "этот", ex: "这人。" },
+            { word: "这边", pinyin: "zhèbiān", pos: "", ru: "здесь", ex: "这边走。" },
+            { word: "这个", pinyin: "zhège", pos: "", ru: "этот", ex: "这个苹果。" },
+            { word: "这里", pinyin: "zhèlǐ", pos: "", ru: "здесь", ex: "在这里。" },
+            { word: "真", pinyin: "zhēn", pos: "", ru: "действительно", ex: "真好。" },
+            { word: "正在", pinyin: "zhèngzài", pos: "", ru: "сейчас", ex: "我正在吃饭。" },
+            { word: "这儿", pinyin: "zhèr", pos: "", ru: "здесь", ex: "到这儿来。" },
+            { word: "这些", pinyin: "zhèxiē", pos: "", ru: "эти", ex: "这些书。" },
+            { word: "只", pinyin: "zhǐ", pos: "", ru: "только", ex: "只有我。" },
+            { word: "知道", pinyin: "zhīdào", pos: "", ru: "знать", ex: "我知道。" },
+            { word: "中国", pinyin: "Zhōngguó", pos: "", ru: "Китай", ex: "我去中国。" },
+            { word: "中文", pinyin: "Zhōngwén", pos: "", ru: "китайский", ex: "学中文。" },
+            { word: "中午", pinyin: "zhōngwǔ", pos: "", ru: "полдень", ex: "中午吃饭。" },
+            { word: "中学", pinyin: "zhōngxué", pos: "", ru: "ср. школа", ex: "上中学。" },
+            { word: "中学生", pinyin: "zhōngxuéshēng", pos: "", ru: "ученик", ex: "我是中学生。" },
+            { word: "住", pinyin: "zhù", pos: "", ru: "жить", ex: "我住北京。" },
+            { word: "桌子", pinyin: "zhuōzi", pos: "", ru: "стол", ex: "一张桌子。" },
+            { word: "字", pinyin: "zì", pos: "", ru: "иероглиф", ex: "写汉字。" },
+            { word: "坐", pinyin: "zuò", pos: "", ru: "сидеть", ex: "坐这儿。" },
+            { word: "做", pinyin: "zuò", pos: "", ru: "делать", ex: "做什么？" },
+            { word: "做饭", pinyin: "zuòfàn", pos: "", ru: "готовить", ex: "妈妈做饭。" },
+            { word: "昨天", pinyin: "zuótiān", pos: "", ru: "вчера", ex: "昨天很忙。" }
+        ];
+
+        // DOM 元素
+        const startBtn = document.getElementById('startBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const restartFromSuccess = document.getElementById('restartFromSuccess');
+        const flipContainer = document.getElementById('flipContainer');
+        const flipInner = document.getElementById('flipInner');
+        const flashcardContainer = document.getElementById('flashcardContainer');
+        const successScreen = document.getElementById('successScreen');
+        const wordDisplay = document.getElementById('wordDisplay');
+        const sentenceDisplay = document.getElementById('sentenceDisplay');
+        const pinyinDisplay = document.getElementById('pinyinDisplay');
+        const posDisplay = document.getElementById('posDisplay');
+        const ruDisplay = document.getElementById('ruDisplay');
+
+        // 状态变量
+        let currentIndex = 0;
+        let gameActive = false;
+
+        // 辅助函数：更新卡片显示
+        function updateCardContent() {
+            if (currentIndex >= 0 && currentIndex < cards.length) {
+                const card = cards[currentIndex];
+                wordDisplay.textContent = card.word;
+                sentenceDisplay.textContent = card.ex;
+                pinyinDisplay.textContent = card.pinyin;
+                posDisplay.textContent = card.pos;
+                ruDisplay.textContent = card.ru;
+            }
+        }
+
+        // 重置翻转状态 (回到正面)
+        function resetFlip() {
+            flipInner.classList.remove('flipped');
+        }
+
+        // 根据索引显示挑战成功或卡片
+        function showScreenByIndex() {
+            if (currentIndex >= cards.length) {
+                flashcardContainer.classList.add('hidden');
+                successScreen.classList.remove('hidden');
+                restartBtn.classList.remove('hidden'); 
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                startBtn.classList.add('hidden');
+            } else {
+                flashcardContainer.classList.remove('hidden');
+                successScreen.classList.add('hidden');
+                updateCardContent();
+                resetFlip();
+                if (gameActive) {
+                    startBtn.classList.add('hidden');
+                    prevBtn.classList.remove('hidden');
+                    nextBtn.classList.remove('hidden');
+                    restartBtn.classList.remove('hidden');
+                } else {
+                    startBtn.classList.remove('hidden');
+                    prevBtn.classList.add('hidden');
+                    nextBtn.classList.add('hidden');
+                    restartBtn.classList.add('hidden');
+                }
+            }
+        }
+
+        function startGame() {
+            gameActive = true;
+            if (currentIndex >= cards.length) currentIndex = 0;
+            showScreenByIndex();
+        }
+
+        function restartGame() {
+            currentIndex = 0;
+            gameActive = true;
+            resetFlip();
+            showScreenByIndex();
+        }
+
+        function goPrev() {
+            if (!gameActive) return;
+            if (currentIndex > 0) {
+                currentIndex--;
+                showScreenByIndex();
+            }
+        }
+
+        function goNext() {
+            if (!gameActive) return;
+            if (currentIndex < cards.length - 1) {
+                currentIndex++;
+                showScreenByIndex();
+            } else if (currentIndex === cards.length - 1) {
+                currentIndex++;
+                showScreenByIndex();
+            }
+        }
+
+        // 点击黑板翻转
+        function handleBlackboardClick(e) {
+            if (!gameActive || currentIndex >= cards.length) return;
+            if (flipInner.classList.contains('flipped')) {
+                flipInner.classList.remove('flipped');
+            } else {
+                flipInner.classList.add('flipped');
+            }
+        }
+
+        // 绑定点击翻转
+        flipContainer.addEventListener('click', handleBlackboardClick);
+
+        // 按钮监听
+        startBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            startGame();
+        });
+
+        prevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            goPrev();
+        });
+
+        nextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            goNext();
+        });
+
+        restartBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            restartGame();
+        });
+
+        restartFromSuccess.addEventListener('click', (e) => {
+            e.stopPropagation();
+            restartGame();
+        });
+
+        // 初始状态
+        currentIndex = 0;
+        gameActive = false;
+        showScreenByIndex(); 
+        resetFlip();
+    })();
+</script>
+</body>
+</html>
